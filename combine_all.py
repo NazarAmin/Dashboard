@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.backends.tkagg as tkagg
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import csv
 
 
 class ToggledFrame(tk.Frame):
@@ -62,15 +63,29 @@ def draw_figure(canvas, figure, loc=(0, 0)):
     return photo
 
 
-def bake_pie():
-    # Data to plot
-    sizes_1 = [444, 111, 500, 666]
+def load_data(filename):
+    data = []
+    with open(filename) as f:
+        raw_data = csv.reader(f)
+        for row in raw_data:
+            data.append([int(x) for x in row])
+    return data
+
+
+def bake_pie(data_row):
+
+    cols = len(data_row)
+
+    # Assign data_row values
+    sizes_1 = data_row[0:cols-1]
     labels_1 = ['Category 1\n'+str("{0:.2f}".format(100*sizes_1[0]/sum(sizes_1)))+'%',
                 'Category 2\n'+str("{0:.2f}".format(100*sizes_1[1]/sum(sizes_1)))+'%',
                 'Category 3\n'+str("{0:.2f}".format(100*sizes_1[2]/sum(sizes_1)))+'%',
                 'Category 4\n'+str("{0:.2f}".format(100*sizes_1[3]/sum(sizes_1)))+'%']
-    sizes_2 = [444, 111, 500, 400, 266]
-    which_subsection = 3
+    sizes_2 = data_row[0:cols-2]
+    sizes_2.append(data_row[cols-2]-data_row[cols-1])
+    sizes_2.append(data_row[cols-1])
+    which_subsection = cols-2 # -1 for 0 index, -1 for last col subset
     labels_2 = ['','','',
                 'Category 4a\n'+str("{0:.2f}".format(100*sizes_2[which_subsection]/sum(sizes_1)))+'%',
                 '']
@@ -113,12 +128,14 @@ def create_dashboard():
     root = tk.Tk()
     root.title("The Title Goes Here")
     root.minsize(width=min_w, height=min_h)
-    #root.maxsize(width=1200, height=900)
+    root.maxsize(width=min_w, height=1050)
 
-
+    # load project collapsible
     t = ToggledFrame(root, text='Load Project', relief="raised", borderwidth=1)
     t.pack(fill="x", expand=1, pady=2, padx=2, anchor="n")
-    # load .csv code
+    #dropdown to get correct file
+    filename = 'data.csv'
+    data = load_data(filename)
 
     t1 = ToggledFrame(root, text='Pie Charts', relief="raised", borderwidth=1)
     t1.pack(fill="x", expand=1, pady=2, padx=2, anchor="n")
@@ -127,10 +144,10 @@ def create_dashboard():
     # NOTE: change figsize if pie charts are warped
     plt.subplots(1, 2, figsize=(2.1, 4))
     plt.subplot(121)
-    bake_pie()
+    bake_pie(data[0]) # 0 is the row
     plt.title("Pie 1")
     plt.subplot(122)
-    fig = bake_pie()
+    fig = bake_pie(data[1]) # 1 is the row
     plt.title("Pie 2")
     plt.tight_layout()
 
